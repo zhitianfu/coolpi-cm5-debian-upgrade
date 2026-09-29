@@ -8,6 +8,12 @@ The upgrade itself is ordinary Debian work. The pain is everything the vendor
 image does differently, so this repo documents the traps, the fixes, and the one
 thing that cannot be fixed from the OS.
 
+It also carries the Hermes Agent skill ([`skills/`](skills/)) that was used to
+reach and repair the machine — the laptop was unreachable over the network, so
+the whole job was driven from a rooted Android phone over USB. That skill is
+board-agnostic; the CM5 profile and the upgrade-specific notes live in its
+references.
+
 ## Hardware / image profile this was tested on
 
 | Item | Value |
@@ -36,7 +42,7 @@ thing that cannot be fixed from the OS.
 
 ## Contents
 
-| File | Purpose |
+| Path | Purpose |
 |---|---|
 | [`docs/01-pre-upgrade-checklist.md`](docs/01-pre-upgrade-checklist.md) | What to record, back up, and decide before touching apt |
 | [`docs/02-upgrade-steps.md`](docs/02-upgrade-steps.md) | The two-hop upgrade procedure and what to expect |
@@ -47,6 +53,35 @@ thing that cannot be fixed from the OS.
 | `scripts/post-upgrade-fix.sh` | Idempotent gdm/plymouth fix (with backups) |
 | `scripts/verify-upgrade.sh` | Read-only post-upgrade verification report |
 | `scripts/prepublish-scan.sh` | Secret/PII scan to run before publishing notes like these |
+| [`skills/usb-hid-remote-console/`](skills/usb-hid-remote-console/) | Hermes Agent skill: administering an unreachable machine from a phone (see below) |
+
+## Hermes Agent skill: `usb-hid-remote-console`
+
+A [Hermes Agent](https://hermes-agent.nousresearch.com/docs) skill — a
+`SKILL.md` the agent loads on a matching trigger, plus `references/` and ready-to-run
+`scripts/`. Use it when a machine has no console, keyboard or network path: the phone
+presents itself as a USB **boot-protocol keyboard** for input, a USB **Ethernet**
+gadget where an SSH shell is possible, and an HTTP **beacon** channel for output.
+
+Install it by copying the directory into a Hermes skills tree:
+
+```sh
+cp -a skills/usb-hid-remote-console ~/.hermes/skills/software-development/
+```
+
+What it covers:
+
+- triage order for a machine reported "dead" (usually it boots and has no network),
+- the configfs HID-keyboard recipe plus its `EINVAL`/stale-config trap,
+- quoting-free typing via a JSON plan driver (`scripts/hid_drive.py`),
+- hex-based output exfiltration (`scripts/exfil_hex.sh`),
+- 25 field-tested rules: dropped USB links swallowing keystrokes, `pkill -f` killing
+  your own shell, fail2ban, a VPN hijacking the cable route, a Wayland greeter owning
+  the keyboard, and a wrong `.dtb` from a dangling `extlinux.conf` `default` label,
+- `references/coolpi-cm5-genbook.md` — this laptop's profile (boot chain, Maskrom
+  entry, phone-side recovery tooling), and
+- `references/rockchip-and-debian-notes.md` — the breakage patterns a Debian release
+  upgrade leaves on a vendor image.
 
 ## Scope, honesty, and non-goals
 
@@ -55,7 +90,9 @@ thing that cannot be fixed from the OS.
 - The scripts are conservative: they back up before changing, they are
   re-runnable, and none of them write to the boot chain or flash.
 - No credentials, tokens, serial numbers, MAC addresses, SSIDs or public IPs are
-  stored here — every environment-specific value is a `<PLACEHOLDER>`.
+  stored here — every environment-specific value is a `<PLACEHOLDER>` or an
+  RFC-reserved example address. `scripts/prepublish-scan.sh` checks that before
+  any push.
 
 ## Licence
 
