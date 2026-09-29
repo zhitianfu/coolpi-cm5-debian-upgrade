@@ -1,0 +1,20 @@
+# local artefacts that must never be committed
+preflight-*.txt
+*dpkg-selections*.txt
+*held-*.txt
+*installed-*.txt
+*-backup-*.tgz
+*.bak
+*.bak.*
+*.orig
+*.rej
+*~
+*.swp
+*.log
+core
+.env
+.env.*
+# flash dumps / loader blobs are large and hardware specific
+*.img
+*.bin
+spinor-backup*
